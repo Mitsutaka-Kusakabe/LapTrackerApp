@@ -55,6 +55,7 @@ fun TimerScreen(
     val isAllCheckpointsReached = laps.size >= preset.checkpoints.size
 
     fun finishAndSaveAction() {
+        if (!isRunning && elapsedTimeMillis > 0) return
         if (elapsedTimeMillis > 0) {
             isRunning = false
             val currentSplit = elapsedTimeMillis
@@ -90,37 +91,37 @@ fun TimerScreen(
     }
 
     fun recordLapAction() {
-        if (isRunning) {
-            val currentSplit = elapsedTimeMillis
+        if (!isRunning) return
+        val currentSplit = elapsedTimeMillis
 
-            // Chattering prevention: minimum 1000ms between consecutive laps
-            if (currentSplit - lastLapSplitTimeMillis < 1000L && laps.isNotEmpty()) {
-                return
-            }
-
-            if (isAllCheckpointsReached) {
-                finishAndSaveAction()
-                return
-            }
-
-            val lapTime = currentSplit - lastLapSplitTimeMillis
-            lastLapSplitTimeMillis = currentSplit
-
-            val checkpointIndex = laps.size
-            val checkpointMeter = preset.checkpoints[checkpointIndex]
-
-            val newLap = LapRecord(
-                lapIndex = laps.size + 1,
-                checkpointMeter = checkpointMeter,
-                label = "${checkpointMeter}m",
-                lapTimeMillis = lapTime,
-                splitTimeMillis = currentSplit
-            )
-            laps.add(0, newLap) // Add at top for current view
-
-            // Visual flash on lap
-            flashBgColor = Color(0xFF004D40)
+        // Chattering prevention: minimum 1000ms between consecutive laps
+        if (currentSplit - lastLapSplitTimeMillis < 1000L && laps.isNotEmpty()) {
+            return
         }
+
+        // Live check: if all checkpoints already recorded, finish and save
+        if (laps.size >= preset.checkpoints.size) {
+            finishAndSaveAction()
+            return
+        }
+
+        val lapTime = currentSplit - lastLapSplitTimeMillis
+        lastLapSplitTimeMillis = currentSplit
+
+        val checkpointIndex = laps.size
+        val checkpointMeter = preset.checkpoints.getOrElse(checkpointIndex) { preset.totalDistanceMeters }
+
+        val newLap = LapRecord(
+            lapIndex = laps.size + 1,
+            checkpointMeter = checkpointMeter,
+            label = "${checkpointMeter}m",
+            lapTimeMillis = lapTime,
+            splitTimeMillis = currentSplit
+        )
+        laps.add(0, newLap) // Add at top for current view
+
+        // Visual flash on lap
+        flashBgColor = Color(0xFF004D40)
     }
 
     // Timer loop with millisecond precision
@@ -140,12 +141,13 @@ fun TimerScreen(
         }
     }
 
-    // Setup voice recognizer
+    // Setup voice recognizer with rememberUpdatedState to always call latest recordLapAction
+    val currentRecordLapAction by rememberUpdatedState(newValue = ::recordLapAction)
     DisposableEffect(isVoiceEnabled, isPeakDetector, isRunning) {
         var voiceTrigger: VoiceLapTrigger? = null
         if (isVoiceEnabled && isRunning) {
             voiceTrigger = VoiceLapTrigger(context, usePeakDetector = isPeakDetector) { keyword ->
-                recordLapAction()
+                currentRecordLapAction()
             }.apply {
                 startListening()
             }

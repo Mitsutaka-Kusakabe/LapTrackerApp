@@ -1,6 +1,6 @@
-# 🏃 LapTracker - 陸上中長距離向けストップウォッチ Androidアプリ (v0.9.0)
+# 🏃 LapTracker - 陸上中長距離向けストップウォッチ Androidアプリ (v0.9.1)
 
-[![Version](https://img.shields.io/badge/version-0.9.0-blue.svg)](https://github.com/Mitsutaka-Kusakabe/LapTrackerApp)
+[![Version](https://img.shields.io/badge/version-0.9.1-blue.svg)](https://github.com/Mitsutaka-Kusakabe/LapTrackerApp)
 
 陸上競技（800m〜5000m、3000mSC、10000m等）のマネージャー・コーチ・選手本人が、**ラップタイム計測・高度な比較分析・1画面でのSNS共有** をスムーズに行うために開発された特化型 Android アプリです。
 
