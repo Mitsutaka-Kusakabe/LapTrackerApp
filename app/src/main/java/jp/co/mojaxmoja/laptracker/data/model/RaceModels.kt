@@ -1,4 +1,4 @@
-﻿package jp.co.mojaxmoja.laptracker.data.model
+package jp.co.mojaxmoja.laptracker.data.model
 
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -29,6 +29,74 @@ data class RaceRecord(
     val notes: String = ""
 ) {
     fun getFormattedTotalTime(): String = formatMillis(totalTimeMillis)
+
+    fun toJson(): org.json.JSONObject {
+        val json = org.json.JSONObject()
+        json.put("id", id)
+        json.put("runnerName", runnerName)
+        json.put("competitionName", competitionName)
+        json.put("dateString", dateString)
+        json.put("eventName", eventName)
+        json.put("totalDistanceMeters", totalDistanceMeters)
+        json.put("totalTimeMillis", totalTimeMillis)
+        json.put("notes", notes)
+        val lapsArray = org.json.JSONArray()
+        for (lap in laps) {
+            val lapJson = org.json.JSONObject()
+            lapJson.put("lapIndex", lap.lapIndex)
+            lapJson.put("checkpointMeter", lap.checkpointMeter)
+            lapJson.put("label", lap.label)
+            lapJson.put("lapTimeMillis", lap.lapTimeMillis)
+            lapJson.put("splitTimeMillis", lap.splitTimeMillis)
+            lapsArray.put(lapJson)
+        }
+        json.put("laps", lapsArray)
+        return json
+    }
+
+    companion object {
+        fun fromJson(json: org.json.JSONObject): RaceRecord {
+            val lapsList = mutableListOf<LapRecord>()
+            val lapsArray = json.optJSONArray("laps")
+            if (lapsArray != null) {
+                for (i in 0 until lapsArray.length()) {
+                    val lapObj = lapsArray.getJSONObject(i)
+                    lapsList.add(
+                        LapRecord(
+                            lapIndex = lapObj.optInt("lapIndex", i + 1),
+                            checkpointMeter = lapObj.optInt("checkpointMeter", 0),
+                            label = lapObj.optString("label", ""),
+                            lapTimeMillis = lapObj.optLong("lapTimeMillis", 0L),
+                            splitTimeMillis = lapObj.optLong("splitTimeMillis", 0L)
+                        )
+                    )
+                }
+            }
+            return RaceRecord(
+                id = json.optString("id", java.util.UUID.randomUUID().toString()),
+                runnerName = json.optString("runnerName", ""),
+                competitionName = json.optString("competitionName", ""),
+                dateString = json.optString("dateString", ""),
+                eventName = json.optString("eventName", ""),
+                totalDistanceMeters = json.optInt("totalDistanceMeters", 0),
+                totalTimeMillis = json.optLong("totalTimeMillis", 0L),
+                laps = lapsList,
+                notes = json.optString("notes", "")
+            )
+        }
+    }
+}
+
+fun recalculateLaps(laps: List<LapRecord>): List<LapRecord> {
+    var previousSplit = 0L
+    return laps.mapIndexed { index, lap ->
+        val newLapTime = (lap.splitTimeMillis - previousSplit).coerceAtLeast(0L)
+        previousSplit = lap.splitTimeMillis
+        lap.copy(
+            lapIndex = index + 1,
+            lapTimeMillis = newLapTime
+        )
+    }
 }
 
 fun formatMillis(millis: Long): String {
@@ -52,3 +120,4 @@ fun formatMillisDiff(diffMillis: Long): String {
         String.format(Locale.getDefault(), "%s%d.%03ds", prefix, sec, ms)
     }
 }
+

@@ -1,4 +1,4 @@
-﻿package jp.co.mojaxmoja.laptracker.ui.screens
+package jp.co.mojaxmoja.laptracker.ui.screens
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
@@ -52,29 +52,62 @@ fun TimerScreen(
     }
 
     val animatedBgColor by animateColorAsState(targetValue = flashBgColor, label = "bg")
+    val isAllCheckpointsReached = laps.size >= preset.checkpoints.size
 
-    // Timer loop with millisecond precision
-    LaunchedEffect(isRunning, startTimeMillis) {
-        if (isRunning) {
-            while (isRunning) {
-                elapsedTimeMillis = System.currentTimeMillis() - startTimeMillis
-                kotlinx.coroutines.android.awaitFrame()
+    fun finishAndSaveAction() {
+        if (elapsedTimeMillis > 0) {
+            isRunning = false
+            val currentSplit = elapsedTimeMillis
+
+            // Check if final checkpoint (totalDistanceMeters) was already recorded
+            val lastRecordedMeter = laps.firstOrNull()?.checkpointMeter ?: 0
+            if (lastRecordedMeter < preset.totalDistanceMeters) {
+                val lapTime = currentSplit - lastLapSplitTimeMillis
+                val finalLap = LapRecord(
+                    lapIndex = laps.size + 1,
+                    checkpointMeter = preset.totalDistanceMeters,
+                    label = "${preset.totalDistanceMeters}m",
+                    lapTimeMillis = lapTime,
+                    splitTimeMillis = currentSplit
+                )
+                laps.add(0, finalLap)
             }
+
+            val finalLaps = jp.co.mojaxmoja.laptracker.data.model.recalculateLaps(laps.reversed())
+            val totalTime = finalLaps.lastOrNull()?.splitTimeMillis ?: currentSplit
+
+            val raceRecord = RaceRecord(
+                runnerName = runnerName,
+                competitionName = competitionName,
+                dateString = raceDate,
+                eventName = preset.eventName,
+                totalDistanceMeters = preset.totalDistanceMeters,
+                totalTimeMillis = totalTime,
+                laps = finalLaps
+            )
+            onRaceFinished(raceRecord)
         }
     }
 
-    val recordLapAction: () -> Unit = {
+    fun recordLapAction() {
         if (isRunning) {
             val currentSplit = elapsedTimeMillis
+
+            // Chattering prevention: minimum 1000ms between consecutive laps
+            if (currentSplit - lastLapSplitTimeMillis < 1000L && laps.isNotEmpty()) {
+                return
+            }
+
+            if (isAllCheckpointsReached) {
+                finishAndSaveAction()
+                return
+            }
+
             val lapTime = currentSplit - lastLapSplitTimeMillis
             lastLapSplitTimeMillis = currentSplit
 
             val checkpointIndex = laps.size
-            val checkpointMeter = if (checkpointIndex < preset.checkpoints.size) {
-                preset.checkpoints[checkpointIndex]
-            } else {
-                preset.totalDistanceMeters
-            }
+            val checkpointMeter = preset.checkpoints[checkpointIndex]
 
             val newLap = LapRecord(
                 lapIndex = laps.size + 1,
@@ -87,6 +120,16 @@ fun TimerScreen(
 
             // Visual flash on lap
             flashBgColor = Color(0xFF004D40)
+        }
+    }
+
+    // Timer loop with millisecond precision
+    LaunchedEffect(isRunning, startTimeMillis) {
+        if (isRunning) {
+            while (isRunning) {
+                elapsedTimeMillis = System.currentTimeMillis() - startTimeMillis
+                kotlinx.coroutines.android.awaitFrame()
+            }
         }
     }
 
@@ -160,6 +203,8 @@ fun TimerScreen(
                         isRunning = true
                         startTimeMillis = System.currentTimeMillis()
                         lastLapSplitTimeMillis = 0L
+                    } else if (isAllCheckpointsReached) {
+                        finishAndSaveAction()
                     } else {
                         recordLapAction()
                     }
@@ -206,8 +251,8 @@ fun TimerScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("次通過地点", color = Color.Gray, fontSize = 12.sp)
                         Text(
-                            "${nextCheckpointMeter}m",
-                            color = Color.White,
+                            if (isAllCheckpointsReached) "FINISH" else "${nextCheckpointMeter}m",
+                            color = if (isAllCheckpointsReached) Color(0xFFFFD600) else Color.White,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -217,12 +262,16 @@ fun TimerScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Surface(
-                    color = Color(0xFF333333),
+                    color = if (isAllCheckpointsReached) Color(0xFF3E2723) else Color(0xFF333333),
                     shape = RoundedCornerShape(20.dp)
                 ) {
                     Text(
-                        if (!isRunning) "▶ タップして開始" else "👆 タップ / 発声「400」でラップ記録",
-                        color = Color.White,
+                        when {
+                            !isRunning -> "▶ タップして開始"
+                            isAllCheckpointsReached -> "🏁 全通過完了！タップで終了・保存"
+                            else -> "👆 タップ / 発声「400」でラップ記録"
+                        },
+                        color = if (isAllCheckpointsReached) Color(0xFFFFD600) else Color.White,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold
@@ -271,32 +320,7 @@ fun TimerScreen(
             }
 
             Button(
-                onClick = {
-                    isRunning = false
-                    if (laps.isEmpty() || laps.first().splitTimeMillis < elapsedTimeMillis) {
-                        val currentSplit = elapsedTimeMillis
-                        val lapTime = currentSplit - lastLapSplitTimeMillis
-                        val finalLap = LapRecord(
-                            lapIndex = laps.size + 1,
-                            checkpointMeter = preset.totalDistanceMeters,
-                            label = "${preset.totalDistanceMeters}m (Finish)",
-                            lapTimeMillis = lapTime,
-                            splitTimeMillis = currentSplit
-                        )
-                        laps.add(0, finalLap)
-                    }
-
-                    val raceRecord = RaceRecord(
-                        runnerName = runnerName,
-                        competitionName = competitionName,
-                        dateString = raceDate,
-                        eventName = preset.eventName,
-                        totalDistanceMeters = preset.totalDistanceMeters,
-                        totalTimeMillis = elapsedTimeMillis,
-                        laps = laps.reversed()
-                    )
-                    onRaceFinished(raceRecord)
-                },
+                onClick = { finishAndSaveAction() },
                 enabled = elapsedTimeMillis > 0,
                 modifier = Modifier.weight(2f),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF), contentColor = Color.Black)

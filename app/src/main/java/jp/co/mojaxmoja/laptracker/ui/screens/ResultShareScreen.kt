@@ -1,4 +1,4 @@
-﻿package jp.co.mojaxmoja.laptracker.ui.screens
+package jp.co.mojaxmoja.laptracker.ui.screens
 
 import android.graphics.Bitmap
 import android.graphics.Picture
@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import jp.co.mojaxmoja.laptracker.data.RaceRepository
 import jp.co.mojaxmoja.laptracker.data.model.RaceRecord
 import jp.co.mojaxmoja.laptracker.data.model.formatMillis
 import jp.co.mojaxmoja.laptracker.share.ImageShareUtil
@@ -35,6 +36,20 @@ fun ResultShareScreen(
 ) {
     val context = LocalContext.current
     val picture = remember { Picture() }
+    var currentRace by remember(race) { mutableStateOf(race) }
+    var showEditDialog by remember { mutableStateOf(false) }
+
+    if (showEditDialog) {
+        EditLapsDialog(
+            race = currentRace,
+            onSave = { updatedRace ->
+                currentRace = updatedRace
+                RaceRepository.updateRace(updatedRace)
+                showEditDialog = false
+            },
+            onDismiss = { showEditDialog = false }
+        )
+    }
 
     fun captureBitmap(): Bitmap {
         val bitmap = Bitmap.createBitmap(picture.width, picture.height, Bitmap.Config.ARGB_8888)
@@ -60,11 +75,21 @@ fun ResultShareScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text("🏁 計測結果", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-            OutlinedButton(
-                onClick = onHomeClick,
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
-            ) {
-                Text("ホーム")
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = { showEditDialog = true },
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFFFD600))
+                ) {
+                    Text("✏️ ラップ修正")
+                }
+
+                OutlinedButton(
+                    onClick = onHomeClick,
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
+                ) {
+                    Text("ホーム")
+                }
             }
         }
 
@@ -103,13 +128,13 @@ fun ResultShareScreen(
                 ) {
                     Column {
                         Text(
-                            text = race.runnerName,
+                            text = currentRace.runnerName,
                             color = Color(0xFFFFD600),
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Black
                         )
                         Text(
-                            text = "${race.eventName} (${race.totalDistanceMeters}m)",
+                            text = "${currentRace.eventName} (${currentRace.totalDistanceMeters}m)",
                             color = Color(0xFF00E5FF),
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
@@ -117,19 +142,19 @@ fun ResultShareScreen(
                     }
 
                     Column(horizontalAlignment = Alignment.End) {
-                        Text(race.competitionName, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                        Text(race.dateString, color = Color.Gray, fontSize = 12.sp)
+                        Text(currentRace.competitionName, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                        Text(currentRace.dateString, color = Color.Gray, fontSize = 12.sp)
                     }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-                Divider(color = Color(0xFF333333))
+                    HorizontalDivider(color = Color(0xFF333333))
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Total Time
                 Text("TOTAL TIME", color = Color.Gray, fontSize = 12.sp, letterSpacing = 2.sp)
                 Text(
-                    text = race.getFormattedTotalTime(),
+                    text = currentRace.getFormattedTotalTime(),
                     color = Color(0xFFFFD600),
                     fontSize = 44.sp,
                     fontFamily = FontFamily.Monospace,
@@ -137,7 +162,7 @@ fun ResultShareScreen(
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
-                Divider(color = Color(0xFF333333))
+                    HorizontalDivider(color = Color(0xFF333333))
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // Vertical Lap Table (Optimized for 1-Screen Screenshot)
@@ -154,7 +179,7 @@ fun ResultShareScreen(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                race.laps.forEach { lap ->
+                currentRace.laps.forEach { lap ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -185,7 +210,7 @@ fun ResultShareScreen(
                             modifier = Modifier.weight(1.5f)
                         )
                     }
-                    Divider(color = Color(0xFF262626))
+                    HorizontalDivider(color = Color(0xFF262626))
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -205,7 +230,7 @@ fun ResultShareScreen(
         Button(
             onClick = {
                 val bitmap = captureBitmap()
-                ImageShareUtil.shareBitmap(context, bitmap, "${race.runnerName} - ${race.eventName}")
+                ImageShareUtil.shareBitmap(context, bitmap, "${currentRace.runnerName} - ${currentRace.eventName}")
             },
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF), contentColor = Color.Black),
             shape = RoundedCornerShape(12.dp),
@@ -219,7 +244,7 @@ fun ResultShareScreen(
         Spacer(modifier = Modifier.height(12.dp))
 
         Button(
-            onClick = { onCompareClick(race) },
+            onClick = { onCompareClick(currentRace) },
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD600), contentColor = Color.Black),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier

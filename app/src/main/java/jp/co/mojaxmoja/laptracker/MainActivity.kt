@@ -1,4 +1,4 @@
-﻿package jp.co.mojaxmoja.laptracker
+package jp.co.mojaxmoja.laptracker
 
 import android.Manifest
 import android.os.Bundle
@@ -30,6 +30,7 @@ enum class AppScreen {
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        RaceRepository.init(this)
         enableEdgeToEdge()
 
         setContent {
