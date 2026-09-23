@@ -1,14 +1,14 @@
-plugins {
+﻿plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.compose.compiler)
   alias(libs.plugins.kotlin.serialization)
 }
 
 android {
-    namespace = "com.example.laptracker"
+    namespace = "jp.co.mojaxmoja.laptracker"
     compileSdk = 36
     defaultConfig {
-        applicationId = "com.example.laptracker"
+        applicationId = "jp.co.mojaxmoja.laptracker"
         minSdk = 24
         targetSdk = 36
         versionCode = 1

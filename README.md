@@ -1,4 +1,4 @@
-# 🏃 LapTracker - 陸上中長距離向けストップウォッチ Androidアプリ
+﻿# 🏃 LapTracker - 陸上中長距離向けストップウォッチ Androidアプリ
 
 陸上競技（800m〜5000m、3000mSC、10000m等）のマネージャー・コーチ・選手本人が、**ラップタイム計測・高度な比較分析・1画面でのSNS共有** をスムーズに行うために開発された特化型 Android アプリです。
 
@@ -104,7 +104,7 @@ cd LapTrackerApp
 
 # 接続されたAndroid実機へのインストール・起動
 & "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" install -r app/build/outputs/apk/debug/app-debug.apk
-& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" shell am start -n com.example.laptracker/.MainActivity
+& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" shell am start -n jp.co.mojaxmoja.laptracker/.MainActivity
 ```
 
 ---
