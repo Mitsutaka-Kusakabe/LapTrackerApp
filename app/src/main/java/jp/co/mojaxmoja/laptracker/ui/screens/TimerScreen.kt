@@ -60,15 +60,13 @@ fun TimerScreen(
             isRunning = false
             val currentSplit = elapsedTimeMillis
 
-            // Check if final checkpoint (totalDistanceMeters) was already recorded
-            val lastRecordedMeter = laps.firstOrNull()?.checkpointMeter ?: 0
-            if (lastRecordedMeter < preset.totalDistanceMeters) {
-                val lapTime = currentSplit - lastLapSplitTimeMillis
+            // If no laps recorded yet, add a single finish lap
+            if (laps.isEmpty()) {
                 val finalLap = LapRecord(
-                    lapIndex = laps.size + 1,
+                    lapIndex = 1,
                     checkpointMeter = preset.totalDistanceMeters,
                     label = "${preset.totalDistanceMeters}m",
-                    lapTimeMillis = lapTime,
+                    lapTimeMillis = currentSplit,
                     splitTimeMillis = currentSplit
                 )
                 laps.add(0, finalLap)
@@ -99,22 +97,24 @@ fun TimerScreen(
             return
         }
 
-        // Live check: if all checkpoints already recorded, finish and save
-        if (laps.size >= preset.checkpoints.size) {
-            finishAndSaveAction()
-            return
-        }
-
         val lapTime = currentSplit - lastLapSplitTimeMillis
         lastLapSplitTimeMillis = currentSplit
 
         val checkpointIndex = laps.size
-        val checkpointMeter = preset.checkpoints.getOrElse(checkpointIndex) { preset.totalDistanceMeters }
+        val (checkpointMeter, label) = if (checkpointIndex < preset.checkpoints.size) {
+            val meter = preset.checkpoints[checkpointIndex]
+            meter to "${meter}m"
+        } else {
+            val meter = preset.totalDistanceMeters
+            val extraIndex = checkpointIndex - preset.checkpoints.size + 1
+            val extraLabel = if (extraIndex == 1) "${meter}m (追加)" else "${meter}m (追加$extraIndex)"
+            meter to extraLabel
+        }
 
         val newLap = LapRecord(
             lapIndex = laps.size + 1,
             checkpointMeter = checkpointMeter,
-            label = "${checkpointMeter}m",
+            label = label,
             lapTimeMillis = lapTime,
             splitTimeMillis = currentSplit
         )
@@ -205,8 +205,6 @@ fun TimerScreen(
                         isRunning = true
                         startTimeMillis = System.currentTimeMillis()
                         lastLapSplitTimeMillis = 0L
-                    } else if (isAllCheckpointsReached) {
-                        finishAndSaveAction()
                     } else {
                         recordLapAction()
                     }
@@ -253,7 +251,7 @@ fun TimerScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("次通過地点", color = Color.Gray, fontSize = 12.sp)
                         Text(
-                            if (isAllCheckpointsReached) "FINISH" else "${nextCheckpointMeter}m",
+                            if (isAllCheckpointsReached) "${preset.totalDistanceMeters}m+" else "${nextCheckpointMeter}m",
                             color = if (isAllCheckpointsReached) Color(0xFFFFD600) else Color.White,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold
@@ -270,7 +268,7 @@ fun TimerScreen(
                     Text(
                         when {
                             !isRunning -> "▶ タップして開始"
-                            isAllCheckpointsReached -> "🏁 全通過完了！タップで終了・保存"
+                            isAllCheckpointsReached -> "👆 タップで追加ラップ / 下部ボタンで保存"
                             else -> "👆 タップ / 発声「400」でラップ記録"
                         },
                         color = if (isAllCheckpointsReached) Color(0xFFFFD600) else Color.White,
