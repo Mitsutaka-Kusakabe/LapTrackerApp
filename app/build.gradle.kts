@@ -11,8 +11,9 @@ android {
         applicationId = "jp.co.mojaxmoja.laptracker"
         minSdk = 24
         targetSdk = 36
-        versionCode = 3
-        versionName = "0.10.0"
+        versionCode = 4
+        versionName = "0.11.0"
+
     }
 
     buildTypes {
@@ -36,9 +37,12 @@ android {
     packaging {
       resources {
         excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        excludes += "/META-INF/DEPENDENCIES"
+        excludes += "/META-INF/INDEX.LIST"
       }
     }
 }
+
 
 kotlin {
     jvmToolchain(17)
@@ -82,4 +86,10 @@ dependencies {
   implementation(libs.androidx.navigation3.ui)
   implementation(libs.androidx.navigation3.runtime)
   implementation(libs.androidx.lifecycle.viewmodel.navigation3)
+
+  // Google Play Services Auth & Google Drive API
+  implementation(libs.play.services.auth)
+  implementation(libs.google.api.client.android)
+  implementation(libs.google.api.services.drive)
 }
+

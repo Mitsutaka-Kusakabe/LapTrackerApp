@@ -1,4 +1,4 @@
-﻿package jp.co.mojaxmoja.laptracker.ui.screens
+package jp.co.mojaxmoja.laptracker.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -36,12 +36,23 @@ fun RaceSetupScreen(
     var isVoiceEnabled by remember { mutableStateOf(true) }
     var isPeakDetector by remember { mutableStateOf(false) } // False: Keyword mode, True: 0ms Sound Peak mode
 
+    // Backup & Restore Dialog State
+    var showBackupDialog by remember { mutableStateOf(false) }
+
     // Custom Preset Creation Dialog State
     var showAddPresetDialog by remember { mutableStateOf(false) }
+
     var newPresetName by remember { mutableStateOf("") }
     var newCheckpointsStr by remember { mutableStateOf("400, 800, 1200, 1600, 2000") }
 
+    if (showBackupDialog) {
+        BackupRestoreDialog(
+            onDismissRequest = { showBackupDialog = false }
+        )
+    }
+
     if (showAddPresetDialog) {
+
         AlertDialog(
             onDismissRequest = { showAddPresetDialog = false },
             title = { Text("＋ 新規カスタムラップセット作成", color = Color.White) },
@@ -124,16 +135,24 @@ fun RaceSetupScreen(
             Text(
                 text = "🏃 陸上ラップタイマー",
                 color = Color.White,
-                fontSize = 22.sp,
+                fontSize = 20.sp,
                 fontWeight = FontWeight.Bold
             )
-            OutlinedButton(
-                onClick = onNavigateHistory,
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF00E5FF))
-            ) {
-                Text("履歴・比較")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                IconButton(
+                    onClick = { showBackupDialog = true }
+                ) {
+                    Text("☁️", fontSize = 20.sp)
+                }
+                OutlinedButton(
+                    onClick = onNavigateHistory,
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF00E5FF))
+                ) {
+                    Text("履歴・比較")
+                }
             }
         }
+
 
         Spacer(modifier = Modifier.height(16.dp))
 

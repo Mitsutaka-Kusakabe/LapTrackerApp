@@ -31,6 +31,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         RaceRepository.init(this)
+        jp.co.mojaxmoja.laptracker.data.backup.GoogleDriveBackupManager.init(this)
         enableEdgeToEdge()
 
         setContent {
@@ -49,7 +50,9 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun LapTrackerApp() {
+    val context = androidx.compose.ui.platform.LocalContext.current
     var currentScreen by remember { mutableStateOf(AppScreen.SETUP) }
+
 
     // Race Session State
     var activeRunnerName by remember { mutableStateOf("") }
@@ -99,6 +102,7 @@ fun LapTrackerApp() {
                 isPeakDetector = activePeakDetector,
                 onRaceFinished = { raceRecord ->
                     RaceRepository.saveRace(raceRecord)
+                    jp.co.mojaxmoja.laptracker.data.backup.GoogleDriveBackupManager.autoBackupInBackground(context)
                     currentRaceRecord = raceRecord
                     currentScreen = AppScreen.RESULT_SHARE
                 },

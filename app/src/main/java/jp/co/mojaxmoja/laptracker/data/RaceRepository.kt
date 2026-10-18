@@ -95,4 +95,48 @@ object RaceRepository {
                     it.eventName.equals(eventName, ignoreCase = true)
         }
     }
+
+    fun exportBackupPayload(): jp.co.mojaxmoja.laptracker.data.backup.BackupPayload {
+        val runnersList = dbHelper?.getAllRunners() ?: _runners.value
+        val racesList = dbHelper?.getAllRaces() ?: _races.value
+        val presetsList = dbHelper?.getAllCustomPresets() ?: emptyList()
+        return jp.co.mojaxmoja.laptracker.data.backup.BackupPayload(
+            runners = runnersList,
+            races = racesList,
+            customPresets = presetsList
+        )
+    }
+
+    fun restoreBackupPayload(payload: jp.co.mojaxmoja.laptracker.data.backup.BackupPayload) {
+        val helper = dbHelper ?: return
+        // Restore runners
+        val existingRunners = helper.getAllRunners().map { it.name }.toSet()
+        for (runner in payload.runners) {
+            if (!existingRunners.contains(runner.name)) {
+                helper.insertRunner(runner)
+            }
+        }
+
+        // Restore custom presets
+        val existingPresets = helper.getAllCustomPresets().map { it.id }.toSet()
+        for (preset in payload.customPresets) {
+            if (!existingPresets.contains(preset.id)) {
+                helper.insertCustomPreset(preset)
+            }
+        }
+        CheckpointPreset.init(helper)
+
+        // Restore races
+        val existingRaceIds = helper.getAllRaces().map { it.id }.toSet()
+        for (race in payload.races) {
+            if (!existingRaceIds.contains(race.id)) {
+                helper.insertRace(race)
+            }
+        }
+
+        // Refresh StateFlows
+        _runners.value = helper.getAllRunners()
+        _races.value = helper.getAllRaces()
+    }
 }
+

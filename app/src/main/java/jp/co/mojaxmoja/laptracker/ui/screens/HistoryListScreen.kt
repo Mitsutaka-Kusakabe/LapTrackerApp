@@ -1,4 +1,4 @@
-﻿package jp.co.mojaxmoja.laptracker.ui.screens
+package jp.co.mojaxmoja.laptracker.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -30,6 +30,8 @@ fun HistoryListScreen(
     var raceToDelete by remember { mutableStateOf<RaceRecord?>(null) }
 
     val selectedCompareIds = remember { mutableStateListOf<String>() }
+    var showBackupDialog by remember { mutableStateOf(false) }
+
 
     val filteredRaces = remember(races, searchQuery) {
         if (searchQuery.isBlank()) races
@@ -40,7 +42,14 @@ fun HistoryListScreen(
         }
     }
 
+    if (showBackupDialog) {
+        BackupRestoreDialog(
+            onDismissRequest = { showBackupDialog = false }
+        )
+    }
+
     if (raceToDelete != null) {
+
         AlertDialog(
             onDismissRequest = { raceToDelete = null },
             title = { Text("履歴の削除", color = Color.White) },
@@ -77,11 +86,17 @@ fun HistoryListScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("📜 ラップ計測履歴", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-            OutlinedButton(onClick = onBackClick) {
-                Text("戻る", color = Color.White)
+            Text("📜 ラップ計測履歴", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                IconButton(onClick = { showBackupDialog = true }) {
+                    Text("☁️", fontSize = 20.sp)
+                }
+                OutlinedButton(onClick = onBackClick) {
+                    Text("戻る", color = Color.White)
+                }
             }
         }
+
 
         Spacer(modifier = Modifier.height(12.dp))
 

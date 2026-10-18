@@ -1,6 +1,7 @@
-# 🏃 LapTracker - 陸上中長距離向けストップウォッチ Androidアプリ (v0.10.0)
+# 🏃 LapTracker - 陸上中長距離向けストップウォッチ Androidアプリ (v0.11.0)
 
-[![Version](https://img.shields.io/badge/version-0.10.0-blue.svg)](https://github.com/Mitsutaka-Kusakabe/LapTrackerApp)
+[![Version](https://img.shields.io/badge/version-0.11.0-blue.svg)](https://github.com/Mitsutaka-Kusakabe/LapTrackerApp)
+
 
 陸上競技（800m〜5000m、3000mSC、10000m等）のマネージャー・コーチ・選手本人が、**ラップタイム計測・高度な比較分析・1画面でのSNS共有** をスムーズに行うために開発された特化型 Android アプリです。
 
@@ -42,8 +43,10 @@
    - **二重計上防止ガード**: 全チェックポイント通過後の自動フィニッシュ昇格 ＆ 連打チャタリング防止。
    - **ラップ修正ダイアログ**: 不要な誤タップをワンタップで削除（前後の区間ラップタイムを自動再計算）したり、通過距離（メートル）の手動修正が可能。
 
-8. **💾 端末ストレージへの自動永続化 (v0.9.0)**
-   - 記録・編集された全レースデータは端末内部ストレージ（JSON形式）に自動保存され、アプリ再起動後も安全に維持。
+8. **☁️ Google Drive 自動バックアップ ＆ 機種変更引き継ぎ (v0.11.0)**
+   - Google Drive の安全なアプリ専用バックアップ領域（`appDataFolder`）と連携。
+   - レース計測終了時にバックグラウンドで自動同期。手動での「今すぐバックアップ」や新端末での「バックアップから復元（引き継ぎ）」にも完全対応。
+
 
 ---
 
